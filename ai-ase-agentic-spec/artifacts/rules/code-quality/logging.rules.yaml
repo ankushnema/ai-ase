@@ -1,0 +1,85 @@
+# =============================================================================
+# AI-ASE 1.3 — Logging Standards
+# =============================================================================
+category: "Logging Standards"
+description: "Enforce structured, contextual, and secure logging practices"
+version: "1.3.0"
+
+rules:
+  - id: "VR-18"
+    name: "Context-Free Logging"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      log\.(info|debug|warn|error)\s*\(\s*"(Done|done|OK|ok|Error|error|Failed|failed|Success|success|Here|here|Start|End|Starting|Ending)"\s*\)
+    description: "Log message has no context — include operation name, entity ID, and outcome"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["RSP-3.4"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["code-hygiene"]
+    rationale: "Generic log messages like 'Error' or 'Done' are useless in production because they provide no clue about what failed or succeeded."
+    fix-guidance: "Include the operation name, entity/request ID, and outcome details in every log message."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN a log statement contains only a generic word (Done, Error, Failed, Success, etc.) with no context
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-19"
+    name: "Sensitive Data in Logs"
+    action: WARN
+    file-types: [CODE]
+    skip-tests: false
+    pattern: |
+      (?i)log\.\w+\(.*\b(password|ssn|social.?security|credit.?card|cardNumber|cvv|secret)\b
+    description: "Potentially logging sensitive data — mask or remove PII from log output"
+    version: "1.3.0"
+    status: active
+    severity: high
+    enforcement: deterministic
+    guardrail-ids: ["G2.4"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["security-critical"]
+    rationale: "Sensitive data in logs is exposed to anyone with log access and may violate data protection regulations (GDPR, PCI-DSS)."
+    fix-guidance: "Remove sensitive fields from log output, or use a masking utility to redact PII before logging."
+    given-when-then: |
+      GIVEN a source code file (including tests)
+      WHEN a log statement references password, SSN, credit card, CVV, or secret fields
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-43"
+    name: "String Concat in Logger"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      log\.(info|debug|warn|error|trace)\s*\(\s*"[^"]*"\s*\+
+    description: "String concatenation in log statement — use parameterized logging: log.info('msg {}', var)"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-5", "GC-1"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["code-hygiene"]
+    rationale: "String concatenation in log statements wastes CPU building the string even when the log level is disabled, and prevents structured log parsing."
+    fix-guidance: "Use SLF4J parameterized logging: log.info(\"Processing order {}\", orderId) instead of string concatenation."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN a log statement uses string concatenation (+) instead of parameterized placeholders
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"

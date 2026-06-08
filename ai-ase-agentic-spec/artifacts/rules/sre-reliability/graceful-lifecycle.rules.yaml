@@ -1,0 +1,87 @@
+graceful-lifecycle.rules.yaml
+
+# =============================================================================
+# AI-ASE 1.3 — Graceful Lifecycle
+# =============================================================================
+category: "Graceful Lifecycle"
+description: "Prevent abrupt process termination that bypasses shutdown hooks and container orchestration"
+version: "1.3.0"
+
+rules:
+  - id: "VR-26"
+    name: "System.exit() in Java"
+    action: BLOCK
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      System\s*\.\s*exit\s*\(
+    description: "System.exit() kills JVM — bypasses shutdown hooks, connection draining, and @PreDestroy in containers"
+    version: "1.3.0"
+    status: active
+    severity: critical
+    enforcement: deterministic
+    guardrail-ids: ["SRE-1"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "System.exit() immediately terminates the JVM, skipping graceful shutdown, in-flight request draining, and resource cleanup."
+    fix-guidance: "Throw an exception or return an error status instead; let the container orchestrator manage the process lifecycle."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN System.exit() is called
+      THEN the scanner MUST block the commit
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-27"
+    name: "os._exit() / sys.exit() in Python"
+    action: BLOCK
+    file-types: [PYTHON]
+    skip-tests: true
+    pattern: |
+      (os\s*\.\s*_exit|sys\s*\.\s*exit)\s*\(
+    description: "os._exit()/sys.exit() kills process — bypasses atexit handlers and finally blocks in containers"
+    version: "1.3.0"
+    status: active
+    severity: critical
+    enforcement: deterministic
+    guardrail-ids: ["SRE-1"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "os._exit() and sys.exit() terminate the process immediately, bypassing cleanup handlers and breaking container orchestration."
+    fix-guidance: "Raise SystemExit or return an error code from main(); let the container orchestrator handle lifecycle signals."
+    given-when-then: |
+      GIVEN a Python source file (excluding tests)
+      WHEN os._exit() or sys.exit() is called
+      THEN the scanner MUST block the commit
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-28"
+    name: "process.exit() in Node.js"
+    action: BLOCK
+    file-types: [JS]
+    skip-tests: true
+    pattern: |
+      process\s*\.\s*exit\s*\(
+    description: "process.exit() kills Node.js — bypasses graceful shutdown handlers in containers"
+    version: "1.3.0"
+    status: active
+    severity: critical
+    enforcement: deterministic
+    guardrail-ids: ["SRE-1"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "process.exit() terminates Node.js immediately, dropping in-flight requests and bypassing graceful shutdown listeners."
+    fix-guidance: "Use server.close() with a SIGTERM handler for graceful shutdown instead of process.exit()."
+    given-when-then: |
+      GIVEN a JavaScript/TypeScript source file (excluding tests)
+      WHEN process.exit() is called
+      THEN the scanner MUST block the commit
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"

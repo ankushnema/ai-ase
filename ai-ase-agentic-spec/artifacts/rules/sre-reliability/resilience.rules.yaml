@@ -1,0 +1,163 @@
+# =============================================================================
+# AI-ASE 1.3 — Resilience Patterns
+# =============================================================================
+category: "Resilience Patterns"
+description: "Detect unsafe process execution, unbounded retries, HTTP anti-patterns, raw clients, and mutable shared state"
+version: "1.3.0"
+
+rules:
+  - id: "VR-33"
+    name: "Runtime.exec() in Java"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      Runtime\s*\.\s*(getRuntime\s*\(\s*\)\s*\.\s*)?exec\s*\(
+    description: "Runtime.exec() — use ProcessBuilder with explicit timeout and error stream handling"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-4"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "Runtime.exec() lacks timeout control and proper error stream handling, causing zombie processes and resource leaks."
+    fix-guidance: "Use ProcessBuilder with redirectErrorStream(true), explicit timeout via waitFor(timeout, unit), and proper stream consumption."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN Runtime.exec() or Runtime.getRuntime().exec() is called
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-34"
+    name: "os.system() in Python"
+    action: WARN
+    file-types: [PYTHON]
+    skip-tests: true
+    pattern: |
+      os\s*\.\s*system\s*\(
+    description: "os.system() — shell injection risk + no timeout; use subprocess.run() with timeout"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-4"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "os.system() passes commands through the shell (injection risk), provides no timeout, and gives no control over stdout/stderr."
+    fix-guidance: "Use subprocess.run() with shell=False, a timeout parameter, and capture_output=True."
+    given-when-then: |
+      GIVEN a Python source file (excluding tests)
+      WHEN os.system() is called
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-38"
+    name: "Unbounded Retry Loop"
+    action: WARN
+    file-types: [CODE]
+    skip-tests: true
+    pattern: |
+      (?i)while\s*\(\s*true\s*\).*(retry|attempt|reconnect)
+    description: "Unbounded retry loop — add max retry count to prevent resource exhaustion during outages"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-4"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "Unbounded retries during an outage amplify load on the failing service, preventing recovery and causing cascading failures."
+    fix-guidance: "Add a max retry count with exponential backoff, or use a circuit breaker (Resilience4j, Polly)."
+    given-when-then: |
+      GIVEN a source code file (excluding tests)
+      WHEN a while(true) loop contains retry/attempt/reconnect logic without a bound
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-40"
+    name: "Synchronous HTTP in Loop"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      for\s*\(.*\)\s*\{[^}]*(restTemplate|webClient|HttpClient|httpClient|fetch)
+    description: "HTTP call inside loop — use batch/bulk API or async pattern to avoid N+1 problem"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-6"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "Making N sequential HTTP calls in a loop creates the N+1 problem, causing latency proportional to N and overwhelming downstream services."
+    fix-guidance: "Use a batch/bulk API endpoint, or parallelize calls with CompletableFuture/async patterns."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN an HTTP client call (RestTemplate, WebClient, HttpClient) appears inside a for loop
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-41"
+    name: "Raw HTTP Client Without Resilience"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      new\s+RestTemplate\s*\(|RestTemplate\s*\(\)|WebClient\s*\.\s*create\s*\(
+    description: "Raw RestTemplate/WebClient without resilience wrapper — use Resilience4j @CircuitBreaker"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-6"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "Raw HTTP clients without circuit breakers, retries, or timeouts will hang or fail silently when downstream services are degraded."
+    fix-guidance: "Wrap HTTP clients with Resilience4j @CircuitBreaker, @Retry, and @TimeLimiter decorators."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN a new RestTemplate() or WebClient.create() is instantiated without resilience configuration
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-44"
+    name: "Mutable Shared State"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      (?<!final\s)static\s+(?!final\b)\s*\w*\s*(Map|List|Set|Collection|HashMap|ArrayList|HashSet)\s*<
+    description: "Non-final static collection — mutable shared state causes race conditions; use ConcurrentHashMap or immutable collections"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-9"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "Non-final static collections can be replaced or mutated by any thread, causing race conditions, lost updates, and ConcurrentModificationExceptions."
+    fix-guidance: "Make static collections final and use ConcurrentHashMap, Collections.unmodifiableList(), or List.of() for thread safety."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN a static collection field is not declared final
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"

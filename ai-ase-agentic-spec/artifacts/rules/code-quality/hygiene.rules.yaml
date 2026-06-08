@@ -1,0 +1,137 @@
+# =============================================================================
+# AI-ASE 1.3 — Code Hygiene
+# =============================================================================
+category: "Code Hygiene"
+description: "Detect TODO/FIXME markers, debug print statements, and other hygiene issues in production code"
+version: "1.3.0"
+
+rules:
+  - id: "VR-07"
+    name: "TODO/FIXME in Production Code"
+    action: BLOCK
+    file-types: [CODE]
+    skip-tests: true
+    pattern: |
+      (//|#|/\*|\*)\s*(TODO|FIXME|HACK|XXX|TEMP)\b
+    description: "Placeholder in production code — complete implementation or track as work item"
+    version: "1.3.0"
+    status: active
+    severity: critical
+    enforcement: deterministic
+    guardrail-ids: ["AH-7"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["code-hygiene"]
+    rationale: "TODO/FIXME comments indicate incomplete work; shipping them to production means known issues are silently deployed."
+    fix-guidance: "Complete the work, or create a tracked backlog item and remove the comment before merging."
+    given-when-then: |
+      GIVEN a source code file (excluding tests)
+      WHEN a comment contains TODO, FIXME, HACK, XXX, or TEMP
+      THEN the scanner MUST block the commit
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-11"
+    name: "Field Injection (@Autowired)"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      @Autowired\s+(private|protected|public)?\s*\w
+    description: "Field injection detected — use constructor injection"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["G3.1"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["code-hygiene"]
+    rationale: "Field injection hides dependencies, makes classes untestable without a DI container, and allows objects to be constructed in invalid states."
+    fix-guidance: "Replace @Autowired field injection with constructor injection (declare a constructor parameter for each dependency)."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN @Autowired is used on a field rather than a constructor
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-17"
+    name: "System.out in Production"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      System\.(out|err)\.(print|println)\s*\(
+    description: "System.out/err in production code — use SLF4J logger"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["AH-7"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["code-hygiene"]
+    rationale: "System.out/err bypasses the logging framework, losing log levels, timestamps, correlation IDs, and centralized log routing."
+    fix-guidance: "Replace System.out/err.print with a SLF4J logger (e.g., log.info(), log.error())."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN System.out or System.err print/println is called
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-24"
+    name: "print() in Python Production"
+    action: WARN
+    file-types: [PYTHON]
+    skip-tests: true
+    pattern: |
+      ^\s*print\s*\(
+    description: "print() in production code — use logging module"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["AH-7"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["code-hygiene"]
+    rationale: "print() goes to stdout without log levels or structure, making it impossible to filter, route, or correlate in production."
+    fix-guidance: "Replace print() with the Python logging module (e.g., logging.info(), logging.error())."
+    given-when-then: |
+      GIVEN a Python source file (excluding tests)
+      WHEN a line starts with print()
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-25"
+    name: "console.log in Production"
+    action: WARN
+    file-types: [JS]
+    skip-tests: true
+    pattern: |
+      console\.(log|debug|info|warn|error)\s*\(
+    description: "console.log in production code — use structured logger (winston/pino)"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["AH-7"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["code-hygiene"]
+    rationale: "console.log lacks structured output, log levels, and centralized routing needed for production observability."
+    fix-guidance: "Replace console.log/debug/info/warn/error with a structured logger like winston or pino."
+    given-when-then: |
+      GIVEN a JavaScript/TypeScript source file (excluding tests)
+      WHEN console.log/debug/info/warn/error is called
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"

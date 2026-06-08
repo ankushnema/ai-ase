@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ai-ase-governance": {
+      "command": "ai-ase",
+      "args": ["serve"],
+      "env": {
+        "AI_ASE_PROFILE": "feature",
+        "AI_ASE_LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}

@@ -1,0 +1,137 @@
+# =============================================================================
+# AI-ASE 1.3 — Pipeline Security
+# =============================================================================
+category: "Pipeline Security"
+description: "Detect unpinned actions, hardcoded secrets in CI/CD configs, and missing approval gates"
+version: "1.3.0"
+
+rules:
+  - id: "VR-48"
+    name: "GitHub Actions Unpinned Action"
+    action: WARN
+    file-types: [CONFIG]
+    skip-tests: false
+    pattern: |
+      uses\s*:\s*\S+@(main|master|latest|dev|develop)\b
+    description: "GitHub Actions pinned to branch — pin to SHA or @v{N} major version to prevent supply chain attacks"
+    version: "1.3.0"
+    status: active
+    severity: high
+    enforcement: deterministic
+    guardrail-ids: ["SRE-8"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["devops-essential"]
+    rationale: "Actions pinned to branch names can be silently replaced with malicious code via force-push, compromising the entire CI/CD pipeline."
+    fix-guidance: "Pin GitHub Actions to a specific SHA hash or @vN major version tag (e.g., actions/checkout@v4)."
+    given-when-then: |
+      GIVEN a GitHub Actions workflow file
+      WHEN an action is pinned to a branch name (main, master, latest, dev, develop)
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-49"
+    name: "Hardcoded Secret in CI Config"
+    action: BLOCK
+    file-types: [CONFIG]
+    skip-tests: false
+    pattern: |
+      (?i)(password|secret|api_key|apikey|token)\s*:\s*["']?[a-zA-Z0-9/+_\-]{8,}["']?\s*$
+    description: "Hardcoded secret in CI/CD config — use secret store (GitHub secrets or Key Vault)"
+    version: "1.3.0"
+    status: active
+    severity: critical
+    enforcement: deterministic
+    guardrail-ids: ["SRE-8", "G-SDLC-5"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["security-critical"]
+    rationale: "Secrets in CI/CD config files are visible to anyone with repository access and persist in git history."
+    fix-guidance: "Use GitHub Secrets, Azure Key Vault, or AWS Secrets Manager and reference them via environment variables."
+    given-when-then: |
+      GIVEN a CI/CD configuration file
+      WHEN a password/secret/api_key/token is set to a literal value of 8+ characters
+      THEN the scanner MUST block the commit
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-56"
+    name: "Plaintext Secret in Docker Compose"
+    action: BLOCK
+    file-types: [CONFIG]
+    skip-tests: false
+    pattern: |
+      (?i)(password|secret|api_key|token)\s*:\s*["']?[a-zA-Z0-9!@#$%^&*()_+=]{4,}["']?\s*$
+    description: "Plaintext secret in Docker Compose/config file — use environment variable or secret manager reference"
+    version: "1.3.0"
+    status: active
+    severity: critical
+    enforcement: deterministic
+    guardrail-ids: ["DO-2", "G-SDLC-5"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["security-critical"]
+    rationale: "Plaintext secrets in Docker Compose files are easily exposed through version control and shared development environments."
+    fix-guidance: "Use Docker secrets, env_file references, or a secret manager instead of inline plaintext values."
+    given-when-then: |
+      GIVEN a Docker Compose or configuration file
+      WHEN a password/secret/api_key/token is set to a plaintext value of 4+ characters
+      THEN the scanner MUST block the commit
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-57"
+    name: "IaC Hardcoded Secret Default"
+    action: BLOCK
+    file-types: [CONFIG]
+    skip-tests: false
+    pattern: |
+      (?i)(default\s*=\s*["'][^"']{8,}["'])\s*#?\s*(password|secret|key|token)
+    description: "Terraform/IaC variable with hardcoded default secret — use secret manager or environment variable"
+    version: "1.3.0"
+    status: active
+    severity: critical
+    enforcement: deterministic
+    guardrail-ids: ["DO-2"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["security-critical"]
+    rationale: "Default values in Terraform variables are committed to source control and used when no override is provided, silently leaking secrets."
+    fix-guidance: "Remove default values for secret variables and require them to be provided via environment variables or a secret manager."
+    given-when-then: |
+      GIVEN a Terraform or IaC configuration file
+      WHEN a variable has a default value of 8+ characters with a secret-related comment or name
+      THEN the scanner MUST block the commit
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-60"
+    name: "CI Deploy Without Approval Gate"
+    action: WARN
+    file-types: [CONFIG]
+    skip-tests: false
+    pattern: |
+      (?i)(deploy|release).*production(?!.*approv)
+    description: "Deployment to production without approval reference — add environment protection rules or manual approval step"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["DO-6"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["devops-essential"]
+    rationale: "Deploying to production without an approval gate allows untested or unauthorized changes to reach users."
+    fix-guidance: "Add a manual approval step, environment protection rule, or required reviewers gate before production deployment."
+    given-when-then: |
+      GIVEN a CI/CD configuration file
+      WHEN a deploy/release step targets production without an approval reference
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"

@@ -1,0 +1,103 @@
+# =============================================================================
+# AI-ASE 1.3 — Context Assembler Configuration
+# =============================================================================
+# Maps file patterns to guardrail documents that should be loaded into context
+# when the AI is editing files matching those patterns.
+# This is how we achieve "load only what's relevant" instead of the 748-line monolith.
+# =============================================================================
+
+# File-pattern → guardrail/guideline mapping
+# When AI edits files matching a pattern, load the corresponding documents
+mappings:
+
+  # Domain model files → Object Calisthenics rules
+  - pattern: "**/*Entity.java|**/*ValueObject.java|**/*Aggregate*.java"
+    load:
+      - "core/guardrails/domain-object-calisthenics.md"
+    priority: high
+
+  # REST controllers → API design guidelines
+  - pattern: "**/*Controller.java|**/*Resource.java|**/*Endpoint.java"
+    load:
+      - "core/guidelines/rest-api-design.md"
+    priority: medium
+
+  # Dockerfiles → Container guardrails
+  - pattern: "**/Dockerfile*|**/docker-compose*|**/*.dockerfile"
+    load:
+      - "core/guardrails/containerization.md"
+    priority: high
+
+  # CI/CD pipelines → SDLC compliance + DevOps guardrails
+  - pattern: "**/Jenkinsfile*|**/.github/workflows/*|**/azure-pipelines*"
+    load:
+      - "core/guardrails/jet-sdlc-compliance.md"
+      - "core/guardrails/devops-guardrails.md"
+    priority: high
+
+  # Kubernetes manifests → SRE + DevOps
+  - pattern: "**/kube/**|**/k8s/**|**/skaffold*|**/*deployment*.yaml"
+    load:
+      - "core/guardrails/sre-reliability.md"
+      - "core/guardrails/devops-guardrails.md"
+    priority: high
+
+  # Build files → SDLC + Green coding
+  - pattern: "**/pom.xml|**/build.gradle|**/package.json|**/*.csproj"
+    load:
+      - "core/guardrails/jet-sdlc-compliance.md"
+      - "core/guardrails/green-coding.md"
+    priority: medium
+
+  # AI/LLM code → AI security + engineering guardrails
+  - pattern: "**/*llm*|**/*ai*|**/*model*|**/*prompt*"
+    load:
+      - "core/guardrails/ai-llm-security.md"
+      - "core/guardrails/ai-engineering-guardrails.md"
+    priority: high
+
+  # Session log → Session log specification
+  - pattern: "**/*Session-Log*.html"
+    load:
+      - "core/guidelines/session-log-specification.md"
+    priority: low
+
+  # Business guardrails file → Template rules
+  - pattern: "**/business-guardrails.md"
+    load:
+      - "core/guardrails/business-guardrails-template.md"
+    priority: high
+
+  # Test files → Testing guidelines
+  - pattern: "**/*Test.java|**/*test*.py|**/*.test.ts|**/*.spec.ts"
+    load:
+      - "core/guidelines/testing-strategy.md"
+    priority: medium
+
+  # Migration files → Migration strategy
+  - pattern: "**/*migration*|**/flyway/**|**/liquibase/**"
+    load:
+      - "core/guidelines/migration-strategy.md"
+    priority: high
+
+# Phase-specific context (loaded when a phase is active)
+phase-context:
+  archaeologist:
+    - "core/guardrails/business-guardrails-template.md"
+    - "core/guidelines/code-commentary.md"
+  guardian:
+    - "core/guardrails/anti-hallucination.md"
+    - "core/guardrails/runtime-safety-patterns.md"
+    - "core/guardrails/sre-reliability.md"
+  architect:
+    - "core/guidelines/architect-design-patterns.md"
+    - "core/guidelines/software-architecture-patterns.md"
+    - "core/guidelines/concurrency-analysis.md"
+  critic:
+    - "core/guidelines/code-review-standards.md"
+    - "core/guardrails/anti-hallucination.md"
+    - "core/guidelines/tech-debt-scoring.md"
+  reflector:
+    - "core/guardrails/domain-object-calisthenics.md"
+    - "core/guardrails/runtime-safety-patterns.md"
+    - "core/guardrails/anti-hallucination.md"

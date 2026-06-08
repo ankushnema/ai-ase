@@ -1,0 +1,109 @@
+# =============================================================================
+# AI-ASE 1.3 — Logical Rule Groups
+# =============================================================================
+# Defines logical groupings of rules for profile-based enforcement and reporting.
+# Generated: 2026-05-04
+# =============================================================================
+version: "1.3.0"
+
+groups:
+  - name: "security-critical"
+    description: "Rules protecting against credential leaks, injection attacks, weak crypto, and sensitive data exposure"
+    default-action: BLOCK
+    rules:
+      - "VR-01"   # Hardcoded Password
+      - "VR-02"   # Hardcoded API Key
+      - "VR-03"   # AWS Access Key
+      - "VR-04"   # Bearer Token
+      - "VR-08"   # Secrets in Dockerfile
+      - "VR-09"   # Hardcoded Connection String
+      - "VR-10"   # SQL String Concatenation
+      - "VR-19"   # Sensitive Data in Logs
+      - "VR-20"   # TLS Below 1.2
+      - "VR-49"   # Hardcoded Secret in CI Config
+      - "VR-50"   # Privileged Container
+      - "VR-53"   # Insecure Deserialization (Python)
+      - "VR-54"   # Weak Cryptographic Algorithm
+      - "VR-56"   # Plaintext Secret in Docker Compose
+      - "VR-57"   # IaC Hardcoded Secret Default
+      - "VR-58"   # Open Security Group (0.0.0.0/0)
+      - "VR-69"   # SQL Injection via StringBuilder
+      - "VR-70"   # Path Traversal via User Input
+      - "VR-71"   # Reflected XSS in HTML Output
+      - "VR-72"   # Command Injection via String Concat
+
+  - name: "financial-compliance"
+    description: "Rules preventing floating-point precision errors in monetary calculations"
+    default-action: BLOCK
+    rules:
+      - "VR-05"   # Float/Double for Money
+      - "VR-06"   # Float for Money (Python)
+
+  - name: "sre-core"
+    description: "Rules enforcing graceful lifecycle, configuration externalization, observability, resilience, and container safety"
+    default-action: WARN
+    rules:
+      - "VR-21"   # Dockerfile Without USER
+      - "VR-26"   # System.exit() in Java
+      - "VR-27"   # os._exit() / sys.exit() in Python
+      - "VR-28"   # process.exit() in Node.js
+      - "VR-29"   # Hardcoded Service URL
+      - "VR-30"   # Direct Thread Creation (Java)
+      - "VR-33"   # Runtime.exec() in Java
+      - "VR-34"   # os.system() in Python
+      - "VR-35"   # Dockerfile Missing HEALTHCHECK
+      - "VR-37"   # Hardcoded Timeout Value
+      - "VR-38"   # Unbounded Retry Loop
+      - "VR-39"   # REST Endpoint Without Metrics
+      - "VR-40"   # Synchronous HTTP in Loop
+      - "VR-41"   # Raw HTTP Client Without Resilience
+      - "VR-42"   # Missing Spring Actuator
+      - "VR-44"   # Mutable Shared State
+      - "VR-45"   # Missing Correlation ID
+      - "VR-46"   # Dockerfile :latest Tag
+      - "VR-51"   # K8s Pod Missing Resource Limits
+      - "VR-52"   # Debug Mode in Config
+      - "VR-55"   # K8s Missing Readiness Probe
+
+  - name: "code-hygiene"
+    description: "Rules enforcing clean code practices including logging, exception handling, resource management, and performance"
+    default-action: WARN
+    rules:
+      - "VR-07"   # TODO/FIXME in Production Code
+      - "VR-11"   # Field Injection (@Autowired)
+      - "VR-12"   # Generic Exception Catch
+      - "VR-13"   # Thread.sleep() in Production
+      - "VR-14"   # new Thread() Direct Creation
+      - "VR-15"   # Unclosed Resource
+      - "VR-16"   # String Concatenation in Loop
+      - "VR-17"   # System.out in Production
+      - "VR-18"   # Context-Free Logging
+      - "VR-22"   # Nested For Loops (O(n^2) Risk)
+      - "VR-23"   # Bare except (Python)
+      - "VR-24"   # print() in Python Production
+      - "VR-25"   # console.log in Production
+      - "VR-31"   # Raw JDBC Connection
+      - "VR-32"   # Unbounded Queue
+      - "VR-36"   # Swallowed Exception (Empty Catch)
+      - "VR-43"   # String Concat in Logger
+
+  - name: "devops-essential"
+    description: "Rules for CI/CD pipeline security, supply chain integrity, and environment parity"
+    default-action: WARN
+    rules:
+      - "VR-48"   # GitHub Actions Unpinned Action
+      - "VR-59"   # Artifact Tagged as :latest
+      - "VR-60"   # CI Deploy Without Approval Gate
+      - "VR-61"   # No Lockfile Committed
+      - "VR-62"   # H2 In-Memory Database in Non-Test
+      - "VR-63"   # Deploy Script Without Monitoring Notification
+
+  - name: "ai-governance"
+    description: "Rules governing AI model usage, output validation, cost control, prompt management, and agent scope"
+    default-action: WARN
+    rules:
+      - "VR-64"   # Unpinned AI Model Reference
+      - "VR-65"   # Raw LLM Output Execution
+      - "VR-66"   # LLM Call Without Max Tokens
+      - "VR-67"   # Hardcoded System Prompt
+      - "VR-68"   # Unrestricted AI Agent Tool Access

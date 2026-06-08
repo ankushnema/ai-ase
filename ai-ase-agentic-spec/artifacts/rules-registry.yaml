@@ -1,0 +1,464 @@
+# =============================================================================
+# AI-ASE 1.3 — Master Rule Registry
+# =============================================================================
+# Lists all 71 rules with their id, name, action, file location, and status.
+# Generated: 2026-05-13
+# =============================================================================
+version: "1.3.1"
+total-rules: 71
+
+registry:
+  # --- security/secrets-detection.rules.yaml (6 rules) ---
+  - id: "VR-01"
+    name: "Hardcoded Password"
+    action: BLOCK
+    file: "security/secrets-detection.rules.yaml"
+    status: active
+
+  - id: "VR-02"
+    name: "Hardcoded API Key"
+    action: BLOCK
+    file: "security/secrets-detection.rules.yaml"
+    status: active
+
+  - id: "VR-03"
+    name: "AWS Access Key"
+    action: BLOCK
+    file: "security/secrets-detection.rules.yaml"
+    status: active
+
+  - id: "VR-04"
+    name: "Bearer Token"
+    action: BLOCK
+    file: "security/secrets-detection.rules.yaml"
+    status: active
+
+  - id: "VR-08"
+    name: "Secrets in Dockerfile"
+    action: BLOCK
+    file: "security/secrets-detection.rules.yaml"
+    status: active
+
+  - id: "VR-09"
+    name: "Hardcoded Connection String"
+    action: BLOCK
+    file: "security/secrets-detection.rules.yaml"
+    status: active
+
+  # --- security/injection-prevention.rules.yaml (4 rules) ---
+  - id: "VR-10"
+    name: "SQL String Concatenation"
+    action: BLOCK
+    file: "security/injection-prevention.rules.yaml"
+    status: active
+
+  - id: "VR-69"
+    name: "SQL Injection via StringBuilder"
+    action: BLOCK
+    file: "security/injection-prevention.rules.yaml"
+    status: active
+
+  - id: "VR-72"
+    name: "Command Injection via String Concat"
+    action: BLOCK
+    file: "security/injection-prevention.rules.yaml"
+    status: active
+
+  - id: "VR-53"
+    name: "Insecure Deserialization (Python)"
+    action: BLOCK
+    file: "security/injection-prevention.rules.yaml"
+    status: active
+
+  # --- security/web-security.rules.yaml (2 rules) ---
+  - id: "VR-70"
+    name: "Path Traversal via User Input"
+    action: BLOCK
+    file: "security/web-security.rules.yaml"
+    status: active
+
+  - id: "VR-71"
+    name: "Reflected XSS in HTML Output"
+    action: BLOCK
+    file: "security/web-security.rules.yaml"
+    status: active
+
+  # --- security/crypto-standards.rules.yaml (1 rule) ---
+  - id: "VR-54"
+    name: "Weak Cryptographic Algorithm"
+    action: WARN
+    file: "security/crypto-standards.rules.yaml"
+    status: active
+
+  # --- type-safety/monetary-types.rules.yaml (2 rules) ---
+  - id: "VR-05"
+    name: "Float/Double for Money"
+    action: BLOCK
+    file: "type-safety/monetary-types.rules.yaml"
+    status: active
+
+  - id: "VR-06"
+    name: "Float for Money (Python)"
+    action: BLOCK
+    file: "type-safety/monetary-types.rules.yaml"
+    status: active
+
+  # --- code-quality/hygiene.rules.yaml (5 rules) ---
+  - id: "VR-07"
+    name: "TODO/FIXME in Production Code"
+    action: BLOCK
+    file: "code-quality/hygiene.rules.yaml"
+    status: active
+
+  - id: "VR-11"
+    name: "Field Injection (@Autowired)"
+    action: WARN
+    file: "code-quality/hygiene.rules.yaml"
+    status: active
+
+  - id: "VR-17"
+    name: "System.out in Production"
+    action: WARN
+    file: "code-quality/hygiene.rules.yaml"
+    status: active
+
+  - id: "VR-24"
+    name: "print() in Python Production"
+    action: WARN
+    file: "code-quality/hygiene.rules.yaml"
+    status: active
+
+  - id: "VR-25"
+    name: "console.log in Production"
+    action: WARN
+    file: "code-quality/hygiene.rules.yaml"
+    status: active
+
+  # --- code-quality/exception-handling.rules.yaml (3 rules) ---
+  - id: "VR-12"
+    name: "Generic Exception Catch"
+    action: WARN
+    file: "code-quality/exception-handling.rules.yaml"
+    status: active
+
+  - id: "VR-23"
+    name: "Bare except (Python)"
+    action: WARN
+    file: "code-quality/exception-handling.rules.yaml"
+    status: active
+
+  - id: "VR-36"
+    name: "Swallowed Exception (Empty Catch)"
+    action: WARN
+    file: "code-quality/exception-handling.rules.yaml"
+    status: active
+
+  # --- code-quality/resource-management.rules.yaml (4 rules) ---
+  - id: "VR-15"
+    name: "Unclosed Resource"
+    action: WARN
+    file: "code-quality/resource-management.rules.yaml"
+    status: active
+
+  - id: "VR-16"
+    name: "String Concatenation in Loop"
+    action: WARN
+    file: "code-quality/resource-management.rules.yaml"
+    status: active
+
+  - id: "VR-31"
+    name: "Raw JDBC Connection"
+    action: WARN
+    file: "code-quality/resource-management.rules.yaml"
+    status: active
+
+  - id: "VR-32"
+    name: "Unbounded Queue"
+    action: WARN
+    file: "code-quality/resource-management.rules.yaml"
+    status: active
+
+  # --- code-quality/logging.rules.yaml (3 rules) ---
+  - id: "VR-18"
+    name: "Context-Free Logging"
+    action: WARN
+    file: "code-quality/logging.rules.yaml"
+    status: active
+
+  - id: "VR-19"
+    name: "Sensitive Data in Logs"
+    action: WARN
+    file: "code-quality/logging.rules.yaml"
+    status: active
+
+  - id: "VR-43"
+    name: "String Concat in Logger"
+    action: WARN
+    file: "code-quality/logging.rules.yaml"
+    status: active
+    note: "Also cross-referenced in sre-reliability/observability.rules.yaml"
+
+  # --- code-quality/performance.rules.yaml (4 rules) ---
+  - id: "VR-13"
+    name: "Thread.sleep() in Production"
+    action: WARN
+    file: "code-quality/performance.rules.yaml"
+    status: active
+
+  - id: "VR-14"
+    name: "new Thread() Direct Creation"
+    action: WARN
+    file: "code-quality/performance.rules.yaml"
+    status: active
+    note: "Duplicate pattern with VR-30 (code-quality perspective)"
+
+  - id: "VR-22"
+    name: "Nested For Loops (O(n^2) Risk)"
+    action: WARN
+    file: "code-quality/performance.rules.yaml"
+    status: active
+
+  - id: "VR-30"
+    name: "Direct Thread Creation (Java)"
+    action: WARN
+    file: "code-quality/performance.rules.yaml"
+    status: active
+    note: "Duplicate pattern with VR-14 (SRE resource-management perspective)"
+
+  # --- sre-reliability/graceful-lifecycle.rules.yaml (3 rules) ---
+  - id: "VR-26"
+    name: "System.exit() in Java"
+    action: BLOCK
+    file: "sre-reliability/graceful-lifecycle.rules.yaml"
+    status: active
+
+  - id: "VR-27"
+    name: "os._exit() / sys.exit() in Python"
+    action: BLOCK
+    file: "sre-reliability/graceful-lifecycle.rules.yaml"
+    status: active
+
+  - id: "VR-28"
+    name: "process.exit() in Node.js"
+    action: BLOCK
+    file: "sre-reliability/graceful-lifecycle.rules.yaml"
+    status: active
+
+  # --- sre-reliability/config-externalization.rules.yaml (3 rules) ---
+  - id: "VR-29"
+    name: "Hardcoded Service URL"
+    action: WARN
+    file: "sre-reliability/config-externalization.rules.yaml"
+    status: active
+
+  - id: "VR-37"
+    name: "Hardcoded Timeout Value"
+    action: WARN
+    file: "sre-reliability/config-externalization.rules.yaml"
+    status: active
+
+  - id: "VR-52"
+    name: "Debug Mode in Config"
+    action: WARN
+    file: "sre-reliability/config-externalization.rules.yaml"
+    status: active
+
+  # --- sre-reliability/observability.rules.yaml (6 rules) ---
+  - id: "VR-35"
+    name: "Dockerfile Missing HEALTHCHECK"
+    action: WARN
+    file: "sre-reliability/observability.rules.yaml"
+    status: active
+
+  - id: "VR-39"
+    name: "REST Endpoint Without Metrics"
+    action: WARN
+    file: "sre-reliability/observability.rules.yaml"
+    status: active
+
+  - id: "VR-42"
+    name: "Missing Spring Actuator"
+    action: WARN
+    file: "sre-reliability/observability.rules.yaml"
+    status: active
+
+  - id: "VR-43"
+    name: "String Concat in Logger"
+    action: WARN
+    file: "sre-reliability/observability.rules.yaml"
+    status: active
+    note: "Cross-reference; primary definition in code-quality/logging.rules.yaml"
+
+  - id: "VR-45"
+    name: "Missing Correlation ID"
+    action: WARN
+    file: "sre-reliability/observability.rules.yaml"
+    status: active
+
+  - id: "VR-55"
+    name: "K8s Missing Readiness Probe"
+    action: WARN
+    file: "sre-reliability/observability.rules.yaml"
+    status: active
+
+  # --- sre-reliability/resilience.rules.yaml (6 rules) ---
+  - id: "VR-33"
+    name: "Runtime.exec() in Java"
+    action: WARN
+    file: "sre-reliability/resilience.rules.yaml"
+    status: active
+
+  - id: "VR-34"
+    name: "os.system() in Python"
+    action: WARN
+    file: "sre-reliability/resilience.rules.yaml"
+    status: active
+
+  - id: "VR-38"
+    name: "Unbounded Retry Loop"
+    action: WARN
+    file: "sre-reliability/resilience.rules.yaml"
+    status: active
+
+  - id: "VR-40"
+    name: "Synchronous HTTP in Loop"
+    action: WARN
+    file: "sre-reliability/resilience.rules.yaml"
+    status: active
+
+  - id: "VR-41"
+    name: "Raw HTTP Client Without Resilience"
+    action: WARN
+    file: "sre-reliability/resilience.rules.yaml"
+    status: active
+
+  - id: "VR-44"
+    name: "Mutable Shared State"
+    action: WARN
+    file: "sre-reliability/resilience.rules.yaml"
+    status: active
+
+  # --- sre-reliability/container-safety.rules.yaml (5 rules) ---
+  - id: "VR-20"
+    name: "TLS Below 1.2"
+    action: WARN
+    file: "sre-reliability/container-safety.rules.yaml"
+    status: active
+
+  - id: "VR-21"
+    name: "Dockerfile Without USER"
+    action: WARN
+    file: "sre-reliability/container-safety.rules.yaml"
+    status: active
+
+  - id: "VR-46"
+    name: "Dockerfile :latest Tag"
+    action: WARN
+    file: "sre-reliability/container-safety.rules.yaml"
+    status: active
+
+  - id: "VR-50"
+    name: "Privileged Container"
+    action: WARN
+    file: "sre-reliability/container-safety.rules.yaml"
+    status: active
+
+  - id: "VR-51"
+    name: "K8s Pod Missing Resource Limits"
+    action: WARN
+    file: "sre-reliability/container-safety.rules.yaml"
+    status: active
+
+  # --- devops/pipeline-security.rules.yaml (5 rules) ---
+  - id: "VR-48"
+    name: "GitHub Actions Unpinned Action"
+    action: WARN
+    file: "devops/pipeline-security.rules.yaml"
+    status: active
+
+  - id: "VR-49"
+    name: "Hardcoded Secret in CI Config"
+    action: BLOCK
+    file: "devops/pipeline-security.rules.yaml"
+    status: active
+
+  - id: "VR-56"
+    name: "Plaintext Secret in Docker Compose"
+    action: BLOCK
+    file: "devops/pipeline-security.rules.yaml"
+    status: active
+
+  - id: "VR-57"
+    name: "IaC Hardcoded Secret Default"
+    action: BLOCK
+    file: "devops/pipeline-security.rules.yaml"
+    status: active
+
+  - id: "VR-60"
+    name: "CI Deploy Without Approval Gate"
+    action: WARN
+    file: "devops/pipeline-security.rules.yaml"
+    status: active
+
+  # --- devops/supply-chain.rules.yaml (1 rule) ---
+  - id: "VR-61"
+    name: "No Lockfile Committed"
+    action: WARN
+    file: "devops/supply-chain.rules.yaml"
+    status: active
+
+  # --- devops/environment-parity.rules.yaml (4 rules) ---
+  - id: "VR-58"
+    name: "Open Security Group (0.0.0.0/0)"
+    action: WARN
+    file: "devops/environment-parity.rules.yaml"
+    status: active
+
+  - id: "VR-59"
+    name: "Artifact Tagged as :latest"
+    action: WARN
+    file: "devops/environment-parity.rules.yaml"
+    status: active
+
+  - id: "VR-62"
+    name: "H2 In-Memory Database in Non-Test"
+    action: WARN
+    file: "devops/environment-parity.rules.yaml"
+    status: active
+
+  - id: "VR-63"
+    name: "Deploy Script Without Monitoring Notification"
+    action: WARN
+    file: "devops/environment-parity.rules.yaml"
+    status: active
+
+  # --- ai-engineering/ai-safety.rules.yaml (5 rules) ---
+  - id: "VR-64"
+    name: "Unpinned AI Model Reference"
+    action: WARN
+    file: "ai-engineering/ai-safety.rules.yaml"
+    status: active
+
+  - id: "VR-65"
+    name: "Raw LLM Output Execution"
+    action: WARN
+    file: "ai-engineering/ai-safety.rules.yaml"
+    status: active
+
+  - id: "VR-66"
+    name: "LLM Call Without Max Tokens"
+    action: WARN
+    file: "ai-engineering/ai-safety.rules.yaml"
+    status: active
+
+  - id: "VR-67"
+    name: "Hardcoded System Prompt"
+    action: WARN
+    file: "ai-engineering/ai-safety.rules.yaml"
+    status: active
+
+  - id: "VR-68"
+    name: "Unrestricted AI Agent Tool Access"
+    action: WARN
+    file: "ai-engineering/ai-safety.rules.yaml"
+    status: active

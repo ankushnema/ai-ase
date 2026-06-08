@@ -1,0 +1,162 @@
+# =============================================================================
+# AI-ASE 1.3 — Observability
+# =============================================================================
+category: "Observability"
+description: "Ensure health checks, metrics, correlation IDs, readiness probes, and actuator endpoints are present"
+version: "1.3.0"
+
+rules:
+  - id: "VR-35"
+    name: "Dockerfile Missing HEALTHCHECK"
+    action: WARN
+    file-types: [DOCKER]
+    skip-tests: false
+    pattern: "STRUCTURAL_CHECK"
+    checker: "dockerfile-healthcheck"
+    description: "Dockerfile without HEALTHCHECK — orchestrator cannot detect unhealthy container"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-5", "CTR-5"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "Without a HEALTHCHECK, the container orchestrator cannot detect when a container is unhealthy and cannot automatically restart it."
+    fix-guidance: "Add a HEALTHCHECK instruction to the Dockerfile that probes the application health endpoint."
+    given-when-then: |
+      GIVEN a Dockerfile
+      WHEN no HEALTHCHECK instruction is present
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-39"
+    name: "REST Endpoint Without Metrics"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      @(GetMapping|PostMapping|PutMapping|DeleteMapping|RequestMapping)
+    description: "REST endpoint — consider adding @Timed/@Counted (Micrometer) for SLO monitoring"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-5"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "REST endpoints without metrics create blind spots; you cannot set or monitor SLOs for unmeasured endpoints."
+    fix-guidance: "Add @Timed or @Counted (Micrometer) annotations to REST endpoints for latency and throughput monitoring."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN a Spring REST mapping annotation is used on a method
+      THEN the scanner MUST warn the developer to add metrics
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-42"
+    name: "Missing Spring Actuator"
+    action: WARN
+    file-types: [CONFIG]
+    skip-tests: false
+    pattern: "STRUCTURAL_CHECK"
+    checker: "spring-actuator-check"
+    description: "Spring Boot project without spring-boot-starter-actuator — no health/metrics endpoints"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-9"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "Without Actuator, Spring Boot apps lack /health, /metrics, and /info endpoints required for platform observability."
+    fix-guidance: "Add spring-boot-starter-actuator to your dependencies and configure appropriate endpoint exposure."
+    given-when-then: |
+      GIVEN a Spring Boot project configuration
+      WHEN spring-boot-starter-actuator is not declared as a dependency
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-43"
+    name: "String Concat in Logger"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      log\.(info|debug|warn|error|trace)\s*\(\s*"[^"]*"\s*\+
+    description: "String concatenation in log statement — use parameterized logging: log.info('msg {}', var)"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-5", "GC-1"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["code-hygiene"]
+    note: "Cross-reference: primary definition is in code-quality/logging.rules.yaml. Listed here because string concatenation in loggers also impacts observability by breaking structured log parsing."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN a log statement uses string concatenation (+) instead of parameterized placeholders
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-45"
+    name: "Missing Correlation ID"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: "STRUCTURAL_CHECK"
+    checker: "correlation-id-check"
+    description: "REST controller without MDC/correlation ID propagation — needed for distributed tracing"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-5"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "Without correlation IDs, tracing a request across microservices is impossible, making production debugging extremely slow."
+    fix-guidance: "Add an MDC filter or interceptor that propagates a correlation/trace ID header across all service boundaries."
+    given-when-then: |
+      GIVEN a Java REST controller (excluding tests)
+      WHEN no MDC/correlation ID propagation mechanism is detected
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-55"
+    name: "K8s Missing Readiness Probe"
+    action: WARN
+    file-types: [CONFIG]
+    skip-tests: false
+    pattern: "STRUCTURAL_CHECK"
+    checker: "k8s-readiness-probe"
+    description: "K8s container spec without readinessProbe — load balancer sends traffic to unready pods"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-5"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "Without a readiness probe, Kubernetes sends traffic to pods that are still starting up, causing errors for end users."
+    fix-guidance: "Add a readinessProbe to every container spec that checks the application is ready to serve traffic."
+    given-when-then: |
+      GIVEN a Kubernetes pod/deployment spec
+      WHEN no readinessProbe is defined for a container
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"

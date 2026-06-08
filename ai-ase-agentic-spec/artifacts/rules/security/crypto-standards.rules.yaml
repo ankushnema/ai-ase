@@ -1,0 +1,33 @@
+# =============================================================================
+# AI-ASE 1.3 — Cryptographic Standards
+# =============================================================================
+category: "Cryptographic Standards"
+description: "Detect usage of weak or deprecated cryptographic algorithms"
+version: "1.3.0"
+
+rules:
+  - id: "VR-54"
+    name: "Weak Cryptographic Algorithm"
+    action: WARN
+    file-types: [CODE]
+    skip-tests: true
+    pattern: |
+      (?i)(MessageDigest\s*\.\s*getInstance\s*\(\s*["']\s*MD5|MessageDigest\s*\.\s*getInstance\s*\(\s*["']\s*SHA-?1["']|hashlib\s*\.\s*(md5|sha1)\s*\(|crypto\.createHash\s*\(\s*["'](md5|sha1))
+    description: "MD5/SHA-1 for cryptographic purpose — use SHA-256+ or bcrypt/argon2 (OWASP A02)"
+    version: "1.3.0"
+    status: active
+    severity: high
+    enforcement: deterministic
+    guardrail-ids: ["SRE-8"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["security-critical"]
+    rationale: "MD5 and SHA-1 have known collision attacks, making them unsuitable for security-sensitive hashing like password storage or integrity verification."
+    fix-guidance: "Use SHA-256 or stronger for integrity checks, and bcrypt/argon2 for password hashing."
+    given-when-then: |
+      GIVEN a source code file (excluding tests)
+      WHEN MD5 or SHA-1 is used via MessageDigest, hashlib, or crypto.createHash
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"

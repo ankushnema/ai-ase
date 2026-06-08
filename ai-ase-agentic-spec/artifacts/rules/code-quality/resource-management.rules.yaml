@@ -1,0 +1,111 @@
+# =============================================================================
+# AI-ASE 1.3 — Resource Management
+# =============================================================================
+category: "Resource Management"
+description: "Detect unclosed resources, inefficient string operations, raw JDBC usage, and unbounded queues"
+version: "1.3.0"
+
+rules:
+  - id: "VR-15"
+    name: "Unclosed Resource"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      new\s+(FileInputStream|FileOutputStream|BufferedReader|BufferedWriter|Socket|ServerSocket|DataInputStream|DataOutputStream)\s*\(
+    description: "Resource opened without try-with-resources — risk of resource leak"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["GC-7"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["code-hygiene"]
+    rationale: "Resources not wrapped in try-with-resources may never be closed if an exception occurs, leading to file descriptor or connection leaks."
+    fix-guidance: "Wrap the resource creation in a try-with-resources block to ensure automatic cleanup."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN a closeable resource (stream, socket, reader, writer) is created outside a try-with-resources
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-16"
+    name: "String Concatenation in Loop"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      (for|while)\s*\([\s\S]{0,200}\+=
+    description: "String concatenation in loop — use StringBuilder"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["GC-3"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["code-hygiene"]
+    rationale: "Each += on a String creates a new object and copies all previous characters, turning an O(n) operation into O(n^2)."
+    fix-guidance: "Use StringBuilder.append() inside loops instead of string concatenation."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN a += string concatenation occurs inside a for or while loop
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-31"
+    name: "Raw JDBC Connection"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      DriverManager\s*\.\s*getConnection\s*\(
+    description: "DriverManager.getConnection() bypasses connection pooling — use HikariCP/DataSource"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-3", "GC-7"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["code-hygiene"]
+    rationale: "DriverManager creates a new physical connection each time, which is expensive and lacks pooling, health checks, and timeout management."
+    fix-guidance: "Use a DataSource backed by HikariCP or your framework's connection pool instead of DriverManager.getConnection()."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN DriverManager.getConnection() is called directly
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-32"
+    name: "Unbounded Queue"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      new\s+LinkedBlockingQueue\s*\(\s*\)
+    description: "LinkedBlockingQueue() without capacity — unbounded queue causes OOM under load"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-3"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["code-hygiene"]
+    rationale: "An unbounded queue grows without limit under sustained load, eventually causing OutOfMemoryError and application crash."
+    fix-guidance: "Specify a capacity limit in the constructor (e.g., new LinkedBlockingQueue<>(1000)) and handle the rejection policy."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN a LinkedBlockingQueue is created without a capacity argument
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"

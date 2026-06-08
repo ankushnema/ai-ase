@@ -1,0 +1,85 @@
+# =============================================================================
+# AI-ASE 1.3 — Configuration Externalization
+# =============================================================================
+category: "Configuration Externalization"
+description: "Detect hardcoded URLs, timeouts, and debug flags that should be externalized to configuration"
+version: "1.3.0"
+
+rules:
+  - id: "VR-29"
+    name: "Hardcoded Service URL"
+    action: WARN
+    file-types: [CODE]
+    skip-tests: true
+    pattern: |
+      ["']https?://[a-zA-Z0-9]
+    description: "Hardcoded URL in source code — externalize to config/environment variable (12-factor app)"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-2"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "Hardcoded URLs prevent environment promotion (dev/staging/prod) and require code changes for endpoint updates."
+    fix-guidance: "Move URLs to application.yml, environment variables, or a config server following 12-factor app principles."
+    given-when-then: |
+      GIVEN a source code file (excluding tests)
+      WHEN an HTTP/HTTPS URL is hardcoded as a string literal
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-37"
+    name: "Hardcoded Timeout Value"
+    action: WARN
+    file-types: [CODE]
+    skip-tests: true
+    pattern: |
+      (?i)(timeout|sleep|delay|wait)\s*\(\s*\d{4,}
+    description: "Hardcoded timeout/sleep value (4+ digits) — use named constant or configuration property"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-2"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "Magic timeout numbers are hard to tune per environment and impossible to adjust without redeployment."
+    fix-guidance: "Extract timeout values to named constants or configuration properties that can be tuned per environment."
+    given-when-then: |
+      GIVEN a source code file (excluding tests)
+      WHEN a timeout/sleep/delay/wait call has a hardcoded numeric value of 4+ digits
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-52"
+    name: "Debug Mode in Config"
+    action: WARN
+    file-types: [CONFIG]
+    skip-tests: true
+    pattern: |
+      (?i)(debug\s*[:=]\s*true|FLASK_DEBUG\s*[:=]\s*1|DEBUG\s*[:=]\s*["']?true)
+    description: "Debug mode enabled in config file — disable before production deployment"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-2"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "Debug mode in production exposes stack traces, internal state, and verbose logging that attackers can exploit."
+    fix-guidance: "Set debug=false in production config files and use environment-specific profiles to control debug settings."
+    given-when-then: |
+      GIVEN a configuration file (excluding tests)
+      WHEN debug mode is set to true or 1
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"

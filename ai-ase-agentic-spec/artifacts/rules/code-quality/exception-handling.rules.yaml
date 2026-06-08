@@ -1,0 +1,85 @@
+# =============================================================================
+# AI-ASE 1.3 — Exception Handling
+# =============================================================================
+category: "Exception Handling"
+description: "Detect generic catch blocks, bare except, and swallowed exceptions"
+version: "1.3.0"
+
+rules:
+  - id: "VR-12"
+    name: "Generic Exception Catch"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      catch\s*\(\s*(Exception|Throwable|RuntimeException)\s+\w+\s*\)
+    description: "Catching generic exception — catch specific exception types"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["G3.3"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["code-hygiene"]
+    rationale: "Catching Exception/Throwable swallows all errors including programming bugs, making failures invisible and debugging impossible."
+    fix-guidance: "Catch the most specific exception type(s) expected, and let unexpected exceptions propagate."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN a catch block catches Exception, Throwable, or RuntimeException
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-23"
+    name: "Bare except (Python)"
+    action: WARN
+    file-types: [PYTHON]
+    skip-tests: true
+    pattern: |
+      except\s*:
+    description: "Bare except catches all exceptions — catch specific exception types"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["G3.3"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["code-hygiene"]
+    rationale: "Bare except catches everything including KeyboardInterrupt and SystemExit, hiding bugs and preventing clean shutdown."
+    fix-guidance: "Catch specific exception types (e.g., except ValueError:) or at minimum use except Exception: to avoid catching system exits."
+    given-when-then: |
+      GIVEN a Python source file (excluding tests)
+      WHEN a bare except: clause is used without specifying an exception type
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-36"
+    name: "Swallowed Exception (Empty Catch)"
+    action: WARN
+    file-types: [JAVA]
+    skip-tests: true
+    pattern: |
+      catch\s*\([^)]+\)\s*\{\s*\}
+    description: "Empty catch block swallows exception — log, rethrow, or handle the error"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-4", "RSP-3.2"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["code-hygiene"]
+    rationale: "Empty catch blocks silently swallow errors, making failures invisible and causing hard-to-diagnose production issues."
+    fix-guidance: "At minimum log the exception; ideally rethrow it or handle it with meaningful recovery logic."
+    given-when-then: |
+      GIVEN a Java source file (excluding tests)
+      WHEN a catch block has an empty body
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"

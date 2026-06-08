@@ -1,0 +1,138 @@
+# =============================================================================
+# AI-ASE 1.3 — AI Safety & Governance
+# =============================================================================
+category: "AI Safety & Governance"
+description: "Enforce AI model pinning, output validation, cost controls, prompt governance, and agent scope limits"
+version: "1.3.0"
+
+rules:
+  - id: "VR-64"
+    name: "Unpinned AI Model Reference"
+    action: WARN
+    file-types: [CODE]
+    skip-tests: true
+    pattern: |
+      (?i)(model\s*[=:]\s*["'](gpt-4|gpt-3\.5|claude|gemini|llama)["'](?!\s*[-_]))
+    description: "AI model reference without version pin — use specific version (e.g., gpt-4-0125-preview) for reproducibility"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["AIE-1"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["ai-governance"]
+    rationale: "Unpinned model names resolve to different versions over time, causing silent behavior changes in production AI features."
+    fix-guidance: "Pin to a specific model version (e.g., gpt-4-0125-preview, claude-3-opus-20240229) for reproducible behavior."
+    given-when-then: |
+      GIVEN a source code file (excluding tests)
+      WHEN a model reference uses a generic name (gpt-4, claude, gemini, llama) without a version suffix
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-65"
+    name: "Raw LLM Output Execution"
+    action: WARN
+    file-types: [CODE]
+    skip-tests: true
+    pattern: |
+      (?i)(eval|exec|execute|run)\s*\(.*\b(response|completion|output|result)\b.*\.(text|content|message|choices)
+    description: "LLM output executed without validation — validate/sanitize AI output before execution (injection risk)"
+    version: "1.3.0"
+    status: active
+    severity: high
+    enforcement: deterministic
+    guardrail-ids: ["AIE-3"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["ai-governance"]
+    rationale: "Executing raw LLM output without validation enables prompt injection attacks where adversarial input becomes executable code."
+    fix-guidance: "Validate and sanitize LLM output through a schema validator or allowlist before any execution."
+    given-when-then: |
+      GIVEN a source code file (excluding tests)
+      WHEN LLM response content is passed directly to eval/exec/execute/run
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-66"
+    name: "LLM Call Without Max Tokens"
+    action: WARN
+    file-types: [CODE]
+    skip-tests: true
+    pattern: |
+      (?i)(openai|anthropic|bedrock|vertex).*\.(create|complete|generate|invoke)\s*\((?!.*max.?tokens)
+    description: "LLM API call without max_tokens — set explicit token limit to prevent unbounded generation cost"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["AIE-4"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["ai-governance"]
+    rationale: "Without max_tokens, LLM calls can generate unlimited output, causing unexpected costs and latency spikes."
+    fix-guidance: "Set max_tokens (or max_output_tokens) explicitly in every LLM API call to bound cost and latency."
+    given-when-then: |
+      GIVEN a source code file (excluding tests)
+      WHEN an LLM API call (OpenAI, Anthropic, Bedrock, Vertex) does not include max_tokens
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-67"
+    name: "Hardcoded System Prompt"
+    action: WARN
+    file-types: [CODE]
+    skip-tests: true
+    multiline: true
+    pattern: |
+      (?i)(system|role)\s*[:=]\s*["']{3}[\s\S]{50,}
+    description: "Multi-line hardcoded system prompt — externalize to versioned prompt template file for review and testing"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["AIE-6"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["ai-governance"]
+    rationale: "Hardcoded multi-line prompts are difficult to version, review, A/B test, and update without code deployments."
+    fix-guidance: "Externalize system prompts to versioned template files that can be reviewed, tested, and updated independently."
+    given-when-then: |
+      GIVEN a source code file (excluding tests)
+      WHEN a system/role prompt is defined as a multi-line hardcoded string
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-68"
+    name: "Unrestricted AI Agent Tool Access"
+    action: WARN
+    file-types: [CODE]
+    skip-tests: true
+    pattern: |
+      (?i)(tools\s*[:=]\s*["']all["']|allow_all_tools\s*[:=]\s*true|unrestricted.*agent)
+    description: "AI agent with unrestricted tool access — define explicit capability manifest (principle of least privilege)"
+    version: "1.3.0"
+    status: active
+    severity: high
+    enforcement: deterministic
+    guardrail-ids: ["AIE-8"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["ai-governance"]
+    rationale: "An AI agent with unrestricted tool access can perform any action, including destructive ones, if the model is tricked by adversarial input."
+    fix-guidance: "Define an explicit tool/capability manifest listing only the specific tools the agent needs (principle of least privilege)."
+    given-when-then: |
+      GIVEN a source code file (excluding tests)
+      WHEN an AI agent is configured with unrestricted tool access (tools='all', allow_all_tools=true)
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"

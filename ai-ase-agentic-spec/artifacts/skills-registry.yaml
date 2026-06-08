@@ -1,0 +1,292 @@
+# =============================================================================
+# AI-ASE 1.3 — Skills Registry (Skills-First Architecture)
+# =============================================================================
+# Skills are the PRIMARY unit of governance knowledge.
+# The base prompt is just identity (50 lines). Everything else is a skill.
+# Skills activate via TRIGGERS — not by "hoping the AI remembers."
+#
+# Total: 21 skills (1 enforcement + 5 phase + 3 gate + 5 quality + 1 feedback
+# + 6 utility). See ../catalogs/skills.md for the human-readable catalog.
+# =============================================================================
+
+# How skills work:
+#   1. A trigger fires (file pattern, event, phase, or explicit user command)
+#   2. The skill's instructions are loaded into context
+#   3. AI follows the skill's protocol
+#   4. Skill completes, context freed for next task
+
+skills:
+
+  # ─── PHASE SKILLS (activate on phase start) ────────────────────────
+  - id: business-rule-extraction
+    name: "Business Rule Extraction"
+    description: "Extract business rules from legacy code into GIVEN/WHEN/THEN format"
+    triggers:
+      - event: phase-start
+        condition: phase == "archaeologist"
+      - event: explicit
+        command: "extract business rules"
+    instructions: "skills/business-rule-extraction/SKILL.md"
+    scope: read-only  # Cannot modify application code
+    artifact: "business-guardrails.md"
+    artifact-validator: regex
+    artifact-regex: "### \\[B\\d{3}\\]"
+
+  - id: guardrail-compliance-check
+    name: "Guardrail Compliance Check"
+    description: "Validate code against all active guardrail categories"
+    triggers:
+      - event: phase-start
+        condition: phase == "guardian"
+      - event: explicit
+        command: "check guardrails"
+      - event: post-generation
+        condition: "files-created > 0"
+    instructions: "skills/guardrail-compliance-check/SKILL.md"
+    scope: read-only
+
+  - id: architecture-design
+    name: "Architecture Design"
+    description: "Design system architecture following PPAR loop, resilience patterns, CAP theorem"
+    triggers:
+      - event: phase-start
+        condition: phase == "architect"
+    instructions: "skills/architecture-design/SKILL.md"
+    scope: design-docs-only
+
+  - id: adversarial-review
+    name: "Adversarial Review (Critic)"
+    description: "Challenge all prior phase outputs from a different perspective"
+    triggers:
+      - event: phase-start
+        condition: phase == "critic"
+    instructions: "skills/adversarial-review/SKILL.md"
+    scope: read-only
+
+  - id: code-generation
+    name: "Governed Code Generation (Reflector)"
+    description: "Generate production code following all guardrails, with pre/post-flight checks"
+    triggers:
+      - event: phase-start
+        condition: phase == "reflector"
+    instructions: "skills/code-generation/SKILL.md"
+    scope: full-access
+
+  # ─── GATE SKILLS (activate at decision points) ─────────────────────
+  - id: code-review-gate
+    name: "Code Review Gate"
+    description: "Classify change impact (HIGH/MEDIUM/LOW), gate protocol accordingly"
+    triggers:
+      - event: file-created
+        condition: "file is service, controller, entity, or config"
+      - event: files-changed-count
+        condition: ">= 5"
+      - event: file-pattern
+        condition: "**/*Service.java OR **/*Controller.java OR **/pom.xml"
+      - event: explicit
+        command: "review gate"
+    instructions: "skills/code-review-gate/SKILL.md"
+    scope: advisory  # Reports, doesn't block
+
+  - id: phase-gate-enforcement
+    name: "Phase Gate Enforcement"
+    description: "Ensure human approval before phase transitions"
+    triggers:
+      - event: phase-complete
+        condition: always
+      - event: ai-attempts-advance
+        condition: "without human approval"
+    instructions: "skills/phase-gate-enforcement/SKILL.md"
+    scope: blocking  # Cannot proceed without human OK
+
+  - id: business-authority-gate
+    name: "Business Authority Gate"
+    description: "Block code generation until business rules are approved by qualified human"
+    triggers:
+      - event: phase-start
+        condition: phase == "reflector"
+      - event: explicit
+        command: "check business approval"
+    instructions: "skills/business-authority-gate/SKILL.md"
+    scope: blocking
+    artifact: "business-guardrails.md"
+    artifact-validator: regex
+    artifact-regex: "(?im)^approved-by:\\s+\\S+"
+
+  # ─── QUALITY SKILLS (activate during/after code generation) ────────
+  - id: mutation-testing
+    name: "Mutation Testing"
+    description: "Run mutation testing, analyze survivors, achieve >=70% kill rate (D3 gate)"
+    triggers:
+      - event: tests-passing
+        condition: phase == "reflector"
+      - event: explicit
+        command: "run mutation testing"
+    instructions: "skills/mutation-testing/SKILL.md"
+    scope: full-access
+
+  - id: architecture-testing
+    name: "Architecture Testing"
+    description: "Run ArchUnit/NetArchTest for L1 compile-time enforcement"
+    triggers:
+      - event: post-generation
+        condition: "architecture-tests exist"
+      - event: explicit
+        command: "run architecture tests"
+    instructions: "skills/architecture-testing/SKILL.md"
+    scope: full-access
+
+  - id: manifest-reconciliation
+    name: "Pre-Flight / Post-Flight Reconciliation"
+    description: "Verify generated files match approved plan (no silent drift)"
+    triggers:
+      - event: phase-start
+        condition: phase == "reflector"  # Pre-flight
+      - event: phase-complete
+        condition: phase == "reflector"  # Post-flight
+    instructions: "skills/manifest-reconciliation/SKILL.md"
+    scope: advisory
+
+  - id: adversarial-testing
+    name: "AI-Adversarial Testing (D3.7)"
+    description: "Separate AI agent writes tests designed to BREAK the generated code"
+    triggers:
+      - event: mutation-testing-complete
+        condition: "kill-rate >= 70%"  # Only after D3 gate passes
+      - event: explicit
+        command: "adversarial test"
+    instructions: "skills/adversarial-testing/SKILL.md"
+    scope: test-generation
+
+  # ─── FEEDBACK SKILLS (activate on human correction) ────────────────
+  - id: car-feedback-loop
+    name: "CAR Feedback Loop"
+    description: "Context→Action→Result: every human correction becomes a framework rule"
+    triggers:
+      - event: human-correction
+        condition: "human says 'that's wrong' or 'don't do that' or rejects a change"
+      - event: explicit
+        command: "apply CAR"
+    instructions: "skills/car-feedback-loop/SKILL.md"
+    scope: framework-edit  # Can edit governance files
+
+  - id: anti-hallucination-audit
+    name: "Anti-Hallucination Self-Audit"
+    description: "Post-generation check: scope, APIs verified, assumptions declared"
+    triggers:
+      - event: post-generation
+        condition: always
+      - event: explicit
+        command: "AH audit"
+    instructions: "skills/anti-hallucination-audit/SKILL.md"
+    scope: advisory
+
+  # ─── ENFORCEMENT SKILLS (non-optional, always active) ─────────────
+  - id: challenge-me
+    name: "Challenge Me — Session Alignment"
+    description: "Structured alignment check at session start. Ensures AI and human agree on scope, criticality, and work style before any work begins."
+    triggers:
+      - event: session-start
+        condition: always  # NON-OPTIONAL. Runs every session.
+      - event: scope-change
+        condition: "user pivots to different topic or project"
+      - event: explicit
+        command: "challenge me"
+    instructions: "skills/challenge-me/SKILL.md"
+    scope: blocking  # No work until alignment completes
+    priority: 0  # Highest priority — runs before all other session-start skills
+
+  # ─── UTILITY SKILLS (activate on specific needs) ───────────────────
+  - id: session-log-management
+    name: "Session Log Management"
+    description: "Create, update, and resume session logs (HTML format, ELI5)"
+    triggers:
+      - event: session-start
+        condition: always  # STEP ZERO
+      - event: deliverable-created
+        condition: always  # Log immediately, don't batch
+    instructions: "skills/session-log-management/SKILL.md"
+    scope: session-log-only
+
+  - id: trust-score-analysis
+    name: "Trust Score Analysis"
+    description: "Compute and explain Trust Score (0-100) for current state"
+    triggers:
+      - event: phase-complete
+        condition: always
+      - event: explicit
+        command: "trust score"
+    instructions: "skills/trust-score-analysis/SKILL.md"
+    scope: read-only
+
+  - id: guardrail-metrics
+    name: "Guardrail Precision Metrics"
+    description: "Track FPR, bypass rate, recurrence rate; quarterly pruning protocol"
+    triggers:
+      - event: scheduled
+        condition: "monthly or explicit"
+      - event: explicit
+        command: "guardrail metrics"
+    instructions: "skills/guardrail-metrics/SKILL.md"
+    scope: advisory
+
+  - id: blind-audit
+    name: "Blind Audit Protocol"
+    description: "Sample generated outputs, verify against business rules without bias"
+    triggers:
+      - event: scheduled
+        condition: "bi-weekly for active projects"
+      - event: explicit
+        command: "blind audit"
+    instructions: "skills/blind-audit/SKILL.md"
+    scope: read-only
+
+  - id: ai-security-review
+    name: "AI / LLM Security Review"
+    description: "Reviews code that calls LLMs or AI APIs. Catches hardcoded system prompts, unpinned model versions, unrestricted agent tools, prompt-injection-prone string concatenation, and missing token / cost guards."
+    triggers:
+      - event: file-write
+        condition: "file contains import of openai, anthropic, langchain, llama-index, transformers, or invokes a *.bedrock / *.vertex / *.openai client"
+      - event: explicit
+        command: "ai security review"
+    instructions: "skills/ai-security-review/SKILL.md"
+    scope: advisory
+    artifact-validator: regex
+    artifact-regex: "### \\[AISEC-\\d+\\]"
+
+  - id: concurrency-review
+    name: "Concurrency & Threading Review"
+    description: "Reviews async, threading, and parallel code. Catches race conditions, missing synchronization on shared mutable state, unbounded executors, and improper use of futures / promises."
+    triggers:
+      - event: file-write
+        condition: "file uses Thread, ExecutorService, asyncio, async/await, goroutines, threading.Thread, or Parallel.For"
+      - event: explicit
+        command: "concurrency review"
+    instructions: "skills/concurrency-review/SKILL.md"
+    scope: advisory
+    artifact-validator: regex
+    artifact-regex: "### \\[CONC-\\d+\\]"
+
+# =============================================================================
+# SKILL CHAINS (skills that trigger other skills)
+# =============================================================================
+chains:
+  - name: "full-generation-chain"
+    description: "Complete code generation with all quality gates"
+    sequence:
+      - business-authority-gate    # Must pass first
+      - manifest-reconciliation    # Pre-flight
+      - code-generation            # Generate code
+      - anti-hallucination-audit   # Self-check
+      - guardrail-compliance-check # Validate
+      - mutation-testing           # Prove tests work
+      - adversarial-testing        # Try to break it
+      - manifest-reconciliation    # Post-flight
+      - trust-score-analysis       # Final score
+
+  - name: "quick-fix-chain"
+    description: "Minimal chain for patch profile"
+    sequence:
+      - code-generation
+      - anti-hallucination-audit
+      - guardrail-compliance-check

@@ -1,0 +1,111 @@
+# =============================================================================
+# AI-ASE 1.3 — Injection Prevention
+# =============================================================================
+category: "Injection Prevention"
+description: "Detect SQL injection risks and insecure deserialization patterns"
+version: "1.3.0"
+
+rules:
+  - id: "VR-10"
+    name: "SQL String Concatenation"
+    action: BLOCK
+    file-types: [CODE]
+    skip-tests: true
+    pattern: |
+      (?i)(executeQuery|executeUpdate|prepareStatement|createQuery|nativeQuery|rawQuery|execute)\s*\(.*\+\s*(request|param|input|user|arg)
+    description: "SQL injection risk — use parameterized queries"
+    version: "1.3.0"
+    status: active
+    severity: critical
+    enforcement: deterministic
+    guardrail-ids: ["AIS-7", "G2.8"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["security-critical"]
+    rationale: "String concatenation in SQL queries allows attackers to inject arbitrary SQL commands, leading to data theft or destruction."
+    fix-guidance: "Use parameterized queries (PreparedStatement, named parameters) instead of concatenating user input into SQL strings."
+    given-when-then: |
+      GIVEN a source code file
+      WHEN a SQL execution method concatenates request/param/input/user/arg variables into the query string
+      THEN the scanner MUST block the commit
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-69"
+    name: "SQL Injection via StringBuilder"
+    action: BLOCK
+    file-types: [JAVA]
+    skip-tests: false
+    pattern: |
+      (?i)\.append\s*\(.*\b(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|AND|OR|SET|VALUES|ORDER BY|GROUP BY)\b.*\.append\s*\(\s*[^"'\s)]
+    description: "SQL injection risk via StringBuilder — use parameterized queries instead of building SQL with append()"
+    version: "1.3.1"
+    status: active
+    severity: critical
+    enforcement: deterministic
+    guardrail-ids: ["AIS-7", "G2.8"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["security-critical"]
+    rationale: "Building SQL queries with StringBuilder.append() using variables allows attackers to inject arbitrary SQL, bypassing single-line concatenation detection."
+    fix-guidance: "Use PreparedStatement with parameterized queries (?) instead of building SQL strings with StringBuilder."
+    given-when-then: |
+      GIVEN a Java source file
+      WHEN a StringBuilder/StringBuffer appends SQL keywords followed by appending a non-literal value
+      THEN the scanner MUST block the commit
+    changelog:
+      - version: "1.3.1"
+        date: "2026-05-13"
+        change: "New rule: detect SQL injection via StringBuilder pattern"
+
+  - id: "VR-72"
+    name: "Command Injection via String Concat"
+    action: BLOCK
+    file-types: [CODE]
+    skip-tests: false
+    pattern: |
+      (ProcessBuilder|Runtime\s*\..*exec)\s*\(.*\+\s*[^"'\s)]
+    description: "Command injection — user input concatenated into process command; use allowlist validation"
+    version: "1.3.1"
+    status: active
+    severity: critical
+    enforcement: deterministic
+    guardrail-ids: ["AIS-7", "SRE-4"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["security-critical"]
+    rationale: "Concatenating user-controlled input into ProcessBuilder or Runtime.exec commands enables arbitrary command execution on the host."
+    fix-guidance: "Use a hardcoded command allowlist, pass arguments as a List<String> to ProcessBuilder (no shell interpolation), and validate all inputs."
+    given-when-then: |
+      GIVEN a source code file
+      WHEN ProcessBuilder or Runtime.exec concatenates a variable into the command string
+      THEN the scanner MUST block the commit
+    changelog:
+      - version: "1.3.1"
+        date: "2026-05-13"
+        change: "New rule: detect command injection via concatenated process commands"
+
+  - id: "VR-53"
+    name: "Insecure Deserialization (Python)"
+    action: BLOCK
+    file-types: [PYTHON]
+    skip-tests: false
+    pattern: |
+      (?i)(pickle\s*\.\s*(load|loads)\s*\(|yaml\s*\.\s*load\s*\((?!.*SafeLoader))
+    description: "pickle.load/yaml.load without SafeLoader — arbitrary code execution risk (OWASP A08)"
+    version: "1.3.0"
+    status: active
+    severity: critical
+    enforcement: deterministic
+    guardrail-ids: ["SRE-4", "AIS-1"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["security-critical"]
+    rationale: "pickle.load and yaml.load can execute arbitrary code embedded in the serialized data, enabling remote code execution attacks."
+    fix-guidance: "Use yaml.safe_load() instead of yaml.load(), and avoid pickle for untrusted data (use JSON or protocol buffers)."
+    given-when-then: |
+      GIVEN a Python source file
+      WHEN pickle.load/loads is called, or yaml.load is called without SafeLoader
+      THEN the scanner MUST block the commit
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"

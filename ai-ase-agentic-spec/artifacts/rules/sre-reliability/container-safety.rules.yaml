@@ -1,0 +1,137 @@
+# =============================================================================
+# AI-ASE 1.3 — Container Safety
+# =============================================================================
+category: "Container Safety"
+description: "Enforce TLS standards, Dockerfile best practices, and Kubernetes security configurations"
+version: "1.3.0"
+
+rules:
+  - id: "VR-20"
+    name: "TLS Below 1.2"
+    action: WARN
+    file-types: [ALL]
+    skip-tests: false
+    pattern: |
+      (?i)(TLSv1\.0|TLSv1\.1|SSLv3|SSLv2|ssl\.PROTOCOL_TLSv1(?!_2))
+    description: "TLS version below 1.2 — minimum TLS 1.2 required"
+    version: "1.3.0"
+    status: active
+    severity: high
+    enforcement: deterministic
+    guardrail-ids: ["G2.2"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["security-critical"]
+    rationale: "TLS 1.0/1.1 and SSLv2/v3 have known vulnerabilities (POODLE, BEAST) that allow traffic interception and decryption."
+    fix-guidance: "Configure TLS 1.2 as the minimum version; prefer TLS 1.3 where supported."
+    given-when-then: |
+      GIVEN any file
+      WHEN a TLS version below 1.2 or an SSL protocol is referenced
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-21"
+    name: "Dockerfile Without USER"
+    action: WARN
+    file-types: [DOCKER]
+    skip-tests: false
+    pattern: "STRUCTURAL_CHECK"
+    checker: "dockerfile-user-directive"
+    description: "Dockerfile runs as root — add USER directive for non-root execution"
+    version: "1.3.0"
+    status: active
+    severity: high
+    enforcement: deterministic
+    guardrail-ids: ["CTR-3"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "Running containers as root means a container escape gives the attacker full host privileges."
+    fix-guidance: "Add a USER directive in the Dockerfile to run the application as a non-root user (e.g., USER 1001)."
+    given-when-then: |
+      GIVEN a Dockerfile
+      WHEN no USER directive is present
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-46"
+    name: "Dockerfile :latest Tag"
+    action: WARN
+    file-types: [DOCKER]
+    skip-tests: false
+    pattern: |
+      (?i)^\s*FROM\s+\S+:(latest)\b
+    description: "FROM image:latest — pin to specific version tag for reproducible builds and rollbacks"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-7"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "The :latest tag is mutable; builds become non-reproducible and rollbacks are impossible when the base image changes unexpectedly."
+    fix-guidance: "Pin the FROM image to a specific version tag or SHA digest (e.g., FROM node:20.11.1-alpine)."
+    given-when-then: |
+      GIVEN a Dockerfile
+      WHEN a FROM instruction uses the :latest tag
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-50"
+    name: "Privileged Container"
+    action: WARN
+    file-types: [CONFIG]
+    skip-tests: false
+    pattern: |
+      (?i)(privileged\s*:\s*true|allowPrivilegeEscalation\s*:\s*true)
+    description: "Privileged container or privilege escalation enabled — containers must run with least privilege"
+    version: "1.3.0"
+    status: active
+    severity: high
+    enforcement: deterministic
+    guardrail-ids: ["SRE-7", "CTR-3"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["security-critical"]
+    rationale: "Privileged containers have full access to the host kernel, making container escapes trivial for attackers."
+    fix-guidance: "Set privileged: false and allowPrivilegeEscalation: false; grant only specific capabilities needed via securityContext."
+    given-when-then: |
+      GIVEN a Kubernetes or container configuration file
+      WHEN privileged or allowPrivilegeEscalation is set to true
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"
+
+  - id: "VR-51"
+    name: "K8s Pod Missing Resource Limits"
+    action: WARN
+    file-types: [CONFIG]
+    skip-tests: false
+    pattern: "STRUCTURAL_CHECK"
+    checker: "k8s-resource-limits"
+    description: "K8s pod spec without resources.limits — noisy neighbor / OOM risk"
+    version: "1.3.0"
+    status: active
+    severity: medium
+    enforcement: deterministic
+    guardrail-ids: ["SRE-3"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["sre-core"]
+    rationale: "Without resource limits, a single pod can consume all node CPU/memory, starving other pods and causing cascading failures."
+    fix-guidance: "Set resources.limits.cpu and resources.limits.memory for every container in the pod spec."
+    given-when-then: |
+      GIVEN a Kubernetes pod or deployment spec
+      WHEN resources.limits is not defined for a container
+      THEN the scanner MUST warn the developer
+    changelog:
+      - version: "1.3.0"
+        date: "2026-05-04"
+        change: "Migrated from v1.2 validate-all.ps1"

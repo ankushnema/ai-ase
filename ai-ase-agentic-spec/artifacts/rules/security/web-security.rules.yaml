@@ -1,0 +1,59 @@
+# =============================================================================
+# AI-ASE 1.3 — Web Security
+# =============================================================================
+category: "Web Security"
+description: "Detect path traversal, reflected XSS, and other web application vulnerabilities"
+version: "1.3.1"
+
+rules:
+  - id: "VR-70"
+    name: "Path Traversal via User Input"
+    action: BLOCK
+    file-types: [CODE]
+    skip-tests: false
+    pattern: |
+      (Paths\.get|new\s+File|Path\.of)\s*\(.*request\.getParameter
+    description: "Path traversal risk — user input passed directly to filesystem API without sanitization"
+    version: "1.3.1"
+    status: active
+    severity: critical
+    enforcement: deterministic
+    guardrail-ids: ["AIS-7", "G2.8"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["security-critical"]
+    rationale: "Passing unsanitized user input to file system APIs (Paths.get, new File) allows attackers to read/write arbitrary files via ../ traversal sequences."
+    fix-guidance: "Canonicalize the path (Path.toRealPath()), verify it starts with the allowed base directory, and reject paths containing '..' sequences."
+    given-when-then: |
+      GIVEN a source code file
+      WHEN a filesystem API (Paths.get, new File, Path.of) receives user-controlled input (request.getParameter)
+      THEN the scanner MUST block the commit
+    changelog:
+      - version: "1.3.1"
+        date: "2026-05-13"
+        change: "New rule: detect path traversal via unsanitized user input in filesystem APIs"
+
+  - id: "VR-71"
+    name: "Reflected XSS in HTML Output"
+    action: BLOCK
+    file-types: [JAVA, JS]
+    skip-tests: false
+    pattern: |
+      (getWriter|println|write)\s*\(.*<\w+[^>]*>.*\+\s*[^"'\s]
+    description: "Reflected XSS — user input concatenated into HTML output without encoding"
+    version: "1.3.1"
+    status: active
+    severity: critical
+    enforcement: deterministic
+    guardrail-ids: ["AIS-7", "G2.8"]
+    profiles: [patch, feature, migration, incident]
+    groups: ["security-critical"]
+    rationale: "Concatenating user input directly into HTML output without encoding allows attackers to inject scripts that execute in victims' browsers."
+    fix-guidance: "Use template engines with auto-escaping (Thymeleaf, JSP with c:out), or explicitly HTML-encode all user input (OWASP Java Encoder, DOMPurify)."
+    given-when-then: |
+      GIVEN a Java or JavaScript source file
+      WHEN an output method (getWriter, println, write) outputs HTML tags concatenated with a variable
+      THEN the scanner MUST block the commit
+    changelog:
+      - version: "1.3.1"
+        date: "2026-05-13"
+        change: "New rule: detect reflected XSS via HTML output with string concatenation"
